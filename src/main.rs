@@ -1,4 +1,6 @@
+mod hittable;
 mod ray;
+mod sphere;
 mod vec3;
 
 extern crate pbr;
@@ -6,7 +8,9 @@ extern crate pbr;
 #[macro_use]
 extern crate float_cmp;
 
+use crate::hittable::Hittable;
 use crate::ray::Ray;
+use crate::sphere::Sphere;
 use crate::vec3::{Color, Point3, Vec3};
 use pbr::ProgressBar;
 use std::error::Error;
@@ -27,6 +31,12 @@ fn render_image(
 ) -> Result<(), Box<dyn Error>> {
     let mut file = File::create("image.ppm")?;
     let mut pb = ProgressBar::new(image_height as u64);
+
+    // World
+    let world: Vec<Box<dyn Hittable>> = vec![
+        Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
+        Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)),
+    ];
 
     // Camera
     let viewport_height = 2.0;
@@ -50,7 +60,7 @@ fn render_image(
                 origin,
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
-            let pixel_color = ray_color(&ray);
+            let pixel_color = ray_color(&ray, &world);
 
             writeln!(
                 file,
@@ -68,20 +78,11 @@ fn render_image(
     Ok(())
 }
 
-fn ray_color(ray: &Ray) -> Color {
-    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray) {
-        return Color::new(1.0, 0.0, 0.0);
+fn ray_color(ray: &Ray, world: &[Box<dyn Hittable>]) -> Color {
+    if let Some(record) = world.hit(ray, 0.0, f64::INFINITY) {
+        return 0.5 * (record.normal + Color::new(1.0, 1.0, 1.0));
     }
-    let unit_directions = ray.direction.unit_vector();
-    let t = 0.5 * (unit_directions.y + 1.0);
+    let unit_direction = ray.direction.unit_vector();
+    let t = 0.5 * (unit_direction.y + 1.0);
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
-}
-
-fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> bool {
-    let oc = ray.origin - *center;
-    let a = ray.direction.dot(ray.direction);
-    let b = 2.0 * oc.dot(ray.direction);
-    let c = oc.dot(oc) - radius.powi(2);
-    let discriminant = b.powi(2) - 4.0 * a * c;
-    discriminant > 0.0
 }
