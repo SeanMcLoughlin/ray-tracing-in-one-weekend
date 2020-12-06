@@ -1,35 +1,49 @@
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
 
 pub mod sphere;
 
-#[derive(Default)]
-pub struct HitRecord {
+pub struct HitRecord<'a> {
     pub p: Point3,
     pub normal: Vec3,
+    pub material: &'a dyn Material,
     pub t: f64,
     pub front_face: bool,
 }
 
-impl HitRecord {
-    pub fn new(p: Point3, normal: Vec3, t: f64, front_face: bool) -> Self {
+impl<'a> HitRecord<'a> {
+    pub fn new(
+        p: Point3,
+        normal: Vec3,
+        material: &'a dyn Material,
+        t: f64,
+        front_face: bool,
+    ) -> Self {
         HitRecord {
             p,
             normal,
+            material,
             t,
             front_face,
         }
     }
 
     #[inline]
-    pub fn with_face_normal(ray: Ray, outward_normal: Vec3, point: Point3, t: f64) -> Self {
+    pub fn build_with_face_normal(
+        ray: Ray,
+        outward_normal: Vec3,
+        material: &'a dyn Material,
+        point: Point3,
+        t: f64,
+    ) -> Self {
         let front_face = ray.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
         } else {
             -outward_normal
         };
-        HitRecord::new(point, normal, t, front_face)
+        HitRecord::new(point, normal, material, t, front_face)
     }
 }
 

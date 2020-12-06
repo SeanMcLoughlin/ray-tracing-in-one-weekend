@@ -14,7 +14,9 @@ use crate::camera::Camera;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::vec3::{Color, Point3, Vec3};
+
 use hittable::sphere::Sphere;
+use material::{lambertian::Lambertian, metal::Metal};
 use pbr::ProgressBar;
 use rand::Rng;
 use std::error::Error;
@@ -41,9 +43,32 @@ fn render_image(
     let mut file = File::create("image.ppm")?;
     let mut pb = ProgressBar::new(image_height as u64);
 
+    let material_ground = Lambertian::new(Color::new(0.8, 0.8, 0.0));
+    let material_center = Lambertian::new(Color::new(0.7, 0.3, 0.3));
+    let material_left = Metal::new(Color::new(0.8, 0.8, 0.8), 0.3);
+    let material_right = Metal::new(Color::new(0.8, 0.6, 0.2), 1.0);
+
     let world: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
-        Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)),
+        Box::new(Sphere::new(
+            Point3::new(0.0, -100.5, -1.0),
+            100.0,
+            material_ground,
+        )),
+        Box::new(Sphere::new(
+            Point3::new(0.0, 0.0, -1.0),
+            0.5,
+            material_center,
+        )),
+        Box::new(Sphere::new(
+            Point3::new(-1.0, 0.0, -1.0),
+            0.5,
+            material_left,
+        )),
+        Box::new(Sphere::new(
+            Point3::new(1.0, 0.0, -1.0),
+            0.5,
+            material_right,
+        )),
     ];
 
     let camera = Camera::new(aspect_ratio, 2.0, 1.0);
@@ -101,8 +126,9 @@ fn ray_color(ray: &Ray, world: &[Box<dyn Hittable>], depth: i32) -> Color {
     }
 
     if let Some(record) = world.hit(ray, 0.001, f64::INFINITY) {
-        let target = record.p + Vec3::random_in_hemisphere(record.normal);
-        return 0.5 * ray_color(&Ray::new(record.p, target - record.p), world, depth - 1);
+        if let Some(scatter) = record.material.scatter(*ray, &record) {
+            return scatter.attenuation * ray_color(&scatter.ray, world, depth - 1);
+        }
     }
 
     let unit_direction = ray.direction.unit_vector();
