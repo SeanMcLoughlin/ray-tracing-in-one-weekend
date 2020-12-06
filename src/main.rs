@@ -1,7 +1,7 @@
 mod camera;
 mod hittable;
+mod material;
 mod ray;
-mod sphere;
 mod vec3;
 
 extern crate pbr;
@@ -13,8 +13,8 @@ extern crate rand;
 use crate::camera::Camera;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
-use crate::sphere::Sphere;
 use crate::vec3::{Color, Point3, Vec3};
+use hittable::sphere::Sphere;
 use pbr::ProgressBar;
 use rand::Rng;
 use std::error::Error;
@@ -36,6 +36,7 @@ fn render_image(
     println!("Rendering...");
 
     let samples_per_pixel = 100;
+    let max_depth = 50;
 
     let mut file = File::create("image.ppm")?;
     let mut pb = ProgressBar::new(image_height as u64);
@@ -57,7 +58,7 @@ fn render_image(
                 let v = (j as f64 + random_double()) / (image_height - 1) as f64;
 
                 let ray = camera.get_ray(u, v);
-                pixel_color += ray_color(&ray, &world);
+                pixel_color += ray_color(&ray, &world, max_depth);
             }
             write_color(&mut file, pixel_color, samples_per_pixel)?;
         }
@@ -76,26 +77,34 @@ fn write_color(
 ) -> Result<(), Box<dyn Error>> {
     let scale = 1.0 / samples_per_pixel as f64;
 
-    let rgb = pixel_color * scale;
-    let (r, g, b) = (rgb.x, rgb.y, rgb.z);
+    // Divide the color by the number of samples and gamma-correct for gamma=2.0
+    let (r, g, b) = (
+        (pixel_color.x * scale).sqrt(),
+        (pixel_color.y * scale).sqrt(),
+        (pixel_color.z * scale).sqrt(),
+    );
 
     let ir = (256.0 * clamp(r, 0.0, 0.999)) as i32;
     let ig = (256.0 * clamp(g, 0.0, 0.999)) as i32;
     let ib = (256.0 * clamp(b, 0.0, 0.999)) as i32;
-
-    // let ir = (255.999 * pixel_color.x) as i32;
-    // let ig = (255.999 * pixel_color.y) as i32;
-    // let ib = (255.999 * pixel_color.z) as i32;
 
     writeln!(file, "{} {} {}", ir, ig, ib)?;
 
     Ok(())
 }
 
-fn ray_color(ray: &Ray, world: &[Box<dyn Hittable>]) -> Color {
-    if let Some(record) = world.hit(ray, 0.0, f64::INFINITY) {
-        return 0.5 * (record.normal + Color::new(1.0, 1.0, 1.0));
+fn ray_color(ray: &Ray, world: &[Box<dyn Hittable>], depth: i32) -> Color {
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    // This is the recursion base-case.
+    if depth <= 0 {
+        return Color::default();
     }
+
+    if let Some(record) = world.hit(ray, 0.001, f64::INFINITY) {
+        let target = record.p + Vec3::random_in_hemisphere(record.normal);
+        return 0.5 * ray_color(&Ray::new(record.p, target - record.p), world, depth - 1);
+    }
+
     let unit_direction = ray.direction.unit_vector();
     let t = 0.5 * (unit_direction.y + 1.0);
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)

@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
@@ -42,6 +43,47 @@ impl Vec3 {
     #[inline]
     pub fn unit_vector(self) -> Self {
         self / self.length()
+    }
+
+    pub fn random(min: f64, max: f64) -> Self {
+        let mut rng = rand::thread_rng();
+        Vec3 {
+            x: rng.gen_range(min, max),
+            y: rng.gen_range(min, max),
+            z: rng.gen_range(min, max),
+        }
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
+        let mut rng = rand::thread_rng();
+        Vec3 {
+            x: rng.gen_range(min, max),
+            y: rng.gen_range(min, max),
+            z: rng.gen_range(min, max),
+        }
+    }
+
+    pub fn random_in_unit_sphere() -> Self {
+        loop {
+            let p = Vec3::random_range(-1.0, 1.0);
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
+    pub fn random_unit_vector() -> Self {
+        Vec3::unit_vector(Vec3::random_in_unit_sphere())
+    }
+
+    pub fn random_in_hemisphere(normal: Vec3) -> Self {
+        let in_unit_sphere = Vec3::random_in_unit_sphere();
+        let in_same_hemisphere_as_normal = in_unit_sphere.dot(normal) > 0.0;
+        if in_same_hemisphere_as_normal {
+            in_unit_sphere
+        } else {
+            -in_unit_sphere
+        }
     }
 }
 
