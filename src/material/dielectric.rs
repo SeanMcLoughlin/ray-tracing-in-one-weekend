@@ -4,6 +4,7 @@ use crate::ray::Ray;
 use crate::vec3::{Color, Vec3};
 use rand::{thread_rng, Rng};
 
+#[derive(Clone, Copy)]
 pub struct Dielectric {
     ir: f64, // Index of Refraction
 }

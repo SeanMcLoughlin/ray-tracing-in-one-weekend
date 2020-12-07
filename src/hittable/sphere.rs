@@ -10,7 +10,7 @@ pub struct Sphere<M: Material> {
 }
 
 impl<M: Material> Sphere<M> {
-    pub(crate) fn new(center: Point3, radius: f64, material: M) -> Self {
+    pub fn new(center: Point3, radius: f64, material: M) -> Self {
         Sphere {
             center,
             radius,

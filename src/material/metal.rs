@@ -3,6 +3,7 @@ use crate::material::{Material, Scatter};
 use crate::ray::Ray;
 use crate::vec3::{Color, Vec3};
 
+#[derive(Clone, Copy)]
 pub struct Metal {
     pub albedo: Color,
     pub fuzz: f64,

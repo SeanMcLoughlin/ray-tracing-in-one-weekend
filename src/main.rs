@@ -3,6 +3,7 @@ mod hittable;
 mod material;
 mod ray;
 mod vec3;
+mod world;
 
 extern crate pbr;
 #[allow(unused_imports)]
@@ -15,8 +16,6 @@ use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::vec3::{Color, Point3, Vec3};
 
-use hittable::sphere::Sphere;
-use material::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal};
 use pbr::ProgressBar;
 use rand::Rng;
 use std::error::Error;
@@ -24,8 +23,8 @@ use std::fs::File;
 use std::io::Write;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
+    let aspect_ratio = 3.0 / 2.0;
+    let image_width = 1200;
     let image_height = (image_width as f64 / aspect_ratio) as i32;
     render_image(aspect_ratio, image_width, image_height)
 }
@@ -37,41 +36,23 @@ fn render_image(
 ) -> Result<(), Box<dyn Error>> {
     println!("Rendering...");
 
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 500;
     let max_depth = 50;
 
     let mut file = File::create("image.ppm")?;
     let mut pb = ProgressBar::new(image_height as u64);
 
-    let material_ground = Lambertian::new(Color::new(0.8, 0.8, 0.0));
-    let material_center = Lambertian::new(Color::new(0.1, 0.2, 0.5));
-    let material_left = Dielectric::new(1.5);
-    let material_right = Metal::new(Color::new(0.8, 0.6, 0.2), 0.0);
+    let world = world::book_cover_scene();
 
-    let world: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere::new(
-            Point3::new(0.0, -100.5, -1.0),
-            100.0,
-            material_ground,
-        )),
-        Box::new(Sphere::new(
-            Point3::new(0.0, 0.0, -1.0),
-            0.5,
-            material_center,
-        )),
-        Box::new(Sphere::new(
-            Point3::new(-1.0, 0.0, -1.0),
-            -0.4,
-            material_left,
-        )),
-        Box::new(Sphere::new(
-            Point3::new(1.0, 0.0, -1.0),
-            0.5,
-            material_right,
-        )),
-    ];
-
-    let camera = Camera::new(aspect_ratio, 2.0, 1.0);
+    let camera = Camera::new(
+        Point3::new(13.0, 2.0, 3.0),
+        Point3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        20.0,
+        aspect_ratio,
+        0.1,
+        10.0,
+    );
 
     writeln!(file, "P3\n{} {}\n255", image_width, image_height)?;
 
