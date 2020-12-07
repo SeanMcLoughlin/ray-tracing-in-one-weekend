@@ -41,6 +41,7 @@ pub fn test_world() -> Vec<Box<dyn Hittable>> {
     ]
 }
 
+#[allow(dead_code)]
 pub fn book_cover_scene() -> Vec<Box<dyn Hittable>> {
     let mut scene: Vec<Box<dyn Hittable>> = Vec::new();
 
