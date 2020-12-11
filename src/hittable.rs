@@ -51,7 +51,7 @@ pub trait Hittable {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
 }
 
-impl<T: AsRef<[Box<dyn Hittable>]>> Hittable for T {
+impl<T: AsRef<[Box<dyn Hittable + Sync + Send>]>> Hittable for T {
     fn hit(&self, ray: &Ray, t_min: f64, mut t_max: f64) -> Option<HitRecord> {
         let mut closest_so_far: Option<HitRecord> = None;
         for hittable in self.as_ref().iter() {

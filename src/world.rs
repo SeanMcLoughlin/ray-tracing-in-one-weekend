@@ -7,7 +7,7 @@ use crate::vec3::{Color, Point3};
 use rand::Rng;
 
 #[allow(dead_code)]
-pub fn test_world() -> Vec<Box<dyn Hittable>> {
+pub fn test_world() -> Vec<Box<dyn Hittable + Send + Sync>> {
     let material_ground = Lambertian::new(Color::new(0.8, 0.8, 0.0));
     let material_center = Lambertian::new(Color::new(0.1, 0.2, 0.5));
     let material_left = Dielectric::new(1.5);
@@ -42,8 +42,8 @@ pub fn test_world() -> Vec<Box<dyn Hittable>> {
 }
 
 #[allow(dead_code)]
-pub fn book_cover_scene() -> Vec<Box<dyn Hittable>> {
-    let mut scene: Vec<Box<dyn Hittable>> = Vec::new();
+pub fn book_cover_scene() -> Vec<Box<dyn Hittable + Send + Sync>> {
+    let mut scene: Vec<Box<dyn Hittable + Send + Sync>> = Vec::new();
 
     let mut rng = rand::thread_rng();
 
