@@ -68,15 +68,17 @@ pub fn book_cover_scene() -> Vec<Box<dyn Hittable + Send + Sync>> {
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let albedo = Color::random(0.0, 1.0) * Color::random(0.0, 1.0);
-                scene.push(Box::new(Sphere::new(center, 0.2, Lambertian::new(albedo))));
-            } else if choose_mat < 0.95 {
-                let albedo = Color::random(0.5, 1.0);
-                let fuzz = rng.gen_range(0.0, 0.5);
-                scene.push(Box::new(Sphere::new(center, 0.2, Metal::new(albedo, fuzz))));
-            } else {
-                scene.push(Box::new(Sphere::new(center, 0.2, Dielectric::new(1.5))));
-            };
+                if choose_mat < 0.8 {
+                    let albedo = Color::random(0.0, 1.0) * Color::random(0.0, 1.0);
+                    scene.push(Box::new(Sphere::new(center, 0.2, Lambertian::new(albedo))));
+                } else if choose_mat < 0.95 {
+                    let albedo = Color::random(0.5, 1.0);
+                    let fuzz = rng.gen_range(0.0, 0.5);
+                    scene.push(Box::new(Sphere::new(center, 0.2, Metal::new(albedo, fuzz))));
+                } else {
+                    scene.push(Box::new(Sphere::new(center, 0.2, Dielectric::new(1.5))));
+                }
+            }
         }
     }
 
